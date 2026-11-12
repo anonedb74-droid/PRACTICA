@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Practică — prezență</title>
+<meta name="theme-color" content="#1E3550">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Practică">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="xlsx.full.min.js" defer></script>
+<style>
+  :root{
+    --infield:#1E3550; --infield-dark:#152638; --track:#E8A317; --track-dark:#B97F0C;
+    --chalk:#F4F5F7; --card:#FFFFFF; --ink:#1B2430; --muted:#667080; --border:#DDE1E7;
+    --ok:#2F7D4F; --danger:#B23A32; --yellow:#E3A23C; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--chalk); color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-tap-highlight-color:transparent;}
+  h1,h2,h3,.display{font-family:'Oswald',system-ui,sans-serif; text-transform:uppercase; letter-spacing:.02em;}
+  #app{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+  header{background:var(--infield); color:#fff; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 20px; padding-top:calc(14px + env(safe-area-inset-top)); border-bottom:4px solid var(--track); flex-shrink:0;}
+  header h1{margin:0; font-size:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  header .sub{font-size:13px; color:#C3CDD8;}
+  header .dreapta{display:flex; align-items:center; gap:10px; font-size:13px; color:#D5DCE4; text-align:right;}
+  .body-wrap{flex:1; display:flex; overflow:hidden;}
+  nav.sidebar{width:190px; background:var(--infield-dark); flex-shrink:0; padding:10px 0; overflow-y:auto;}
+  nav.sidebar button{display:block; width:100%; border:none; background:transparent; color:#C9D2DC; font:600 15px 'Inter',sans-serif; padding:14px 18px; text-align:left; cursor:pointer; border-left:4px solid transparent;}
+  nav.sidebar button.active{background:var(--infield); color:#fff; border-left-color:var(--track);}
+  main{flex:1; overflow-y:auto; padding:22px 26px 90px;}
+  main h2{font-size:22px; margin:0 0 4px; color:var(--infield);}
+  main h3{font-size:16px; margin:0 0 10px; color:var(--infield);}
+  .tab-desc{color:var(--muted); font-size:14px; margin:0 0 18px;}
+  nav.bottombar{display:none;}
+  @media (max-width:760px){
+    nav.sidebar{display:none;}
+    main{padding:16px 14px 100px;}
+    header{padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top));}
+    header h1{font-size:19px;}
+    nav.bottombar{display:flex; position:fixed; left:0; right:0; bottom:0; background:var(--infield-dark); padding-bottom:env(safe-area-inset-bottom); z-index:20;}
+    nav.bottombar button{flex:1; border:none; background:transparent; color:#C9D2DC; font:600 13px 'Inter',sans-serif; padding:14px 4px; border-top:3px solid transparent;}
+    nav.bottombar button.active{color:#fff; border-top-color:var(--track);}
+  }
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+  .rand{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .intre{justify-content:space-between;}
+  .small{font-size:13px; color:var(--muted);}
+  button.btn{border:1px solid var(--border); background:#fff; color:var(--ink); font:600 15px 'Inter',sans-serif; padding:10px 14px; border-radius:8px; cursor:pointer; min-height:44px;}
+  button.btn.primar{background:var(--track); border-color:var(--track-dark); color:#1B2430;}
+  button.btn.inchis{background:var(--infield); border-color:var(--infield-dark); color:#fff;}
+  button.btn.pericol{color:var(--danger); border-color:#E3C2BF;}
+  button.btn.mic{padding:6px 10px; min-height:36px; font-size:14px;}
+  button.btn:disabled{opacity:.5; cursor:default;}
+  input,select,textarea{font:16px 'Inter',sans-serif; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--ink); min-height:44px; max-width:100%;}
+  textarea{width:100%; min-height:70px;}
+  label.camp{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:10px;}
+  label.camp input, label.camp select{display:block; width:100%; margin-top:4px;}
+  .eticheta{display:inline-block; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; background:#E9EDF2; color:var(--muted); white-space:nowrap;}
+  .eticheta.ok{background:#DDF0E4; color:var(--ok);}
+  .eticheta.tarziu{background:#FBEBCF; color:#8A5A00;}
+  .eticheta.lipsa{background:#F6DEDC; color:var(--danger);}
+  table{border-collapse:collapse; width:100%; font-size:14px;}
+  th,td{border:1px solid var(--border); padding:6px 8px; text-align:left;}
+  th{background:#EEF1F5; font-weight:600;}
+  td.c,th.c{text-align:center;}
+  .tabel-wrap{overflow-x:auto;}
+  td.P{color:var(--ok); font-weight:700;} td.A{color:var(--danger); font-weight:700; background:#FBEFEE;}
+  .lista-bife{list-style:none; margin:0; padding:0;}
+  .lista-bife li{display:flex; align-items:center; gap:12px; padding:12px 10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff; cursor:pointer; font-size:17px; font-weight:600; user-select:none;}
+  .lista-bife li .bifa{width:30px; height:30px; border-radius:8px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; color:#fff;}
+  .lista-bife li.da{border-color:var(--ok); background:#EDF7F1;}
+  .lista-bife li.da .bifa{background:var(--ok); border-color:var(--ok);}
+  .lista-bife li .stare{margin-left:auto; font-size:13px; font-weight:700; color:var(--danger);}
+  .lista-bife li.da .stare{color:var(--ok);}
+  #toast{position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:#1B2430; color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; z-index:100; opacity:0; pointer-events:none; transition:opacity .2s; max-width:90vw;}
+  #toast.vizibil{opacity:1;}
+  .modal-fundal{position:fixed; inset:0; background:rgba(15,25,35,.55); z-index:50; display:flex; align-items:flex-start; justify-content:center; padding:20px 12px; overflow-y:auto;}
+  .modal{background:#fff; border-radius:12px; padding:18px; width:100%; max-width:520px;}
+  .modal h3{margin-top:0;}
+  .centrat{max-width:560px; margin:0 auto;}
+  .banner{background:#FBEBCF; border:1px solid #EBCB8B; color:#6B4700; border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:14px;}
+  .banner.rosu{background:#F6DEDC; border-color:#E3B5B1; color:#7C231D;}
+  details.firma{border:1px solid var(--border); border-radius:10px; margin-bottom:10px; background:#fff;}
+  details.firma summary{padding:12px 14px; cursor:pointer; font-weight:700;}
+  details.firma .in{padding:0 14px 14px;}
+  .numai-print{display:none;}
+  @media print{
+    header, nav, .fara-print, #toast{display:none !important;}
+    #app{height:auto; display:block;} .body-wrap{display:block; overflow:visible;} main{overflow:visible; padding:0;}
+    body{background:#fff;} .card{border:none; padding:0;} .numai-print{display:block;}
+    table{font-size:11px;} @page{size:A4 landscape; margin:12mm;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<div id="modal-loc"></div>
+<script>
+'use strict';
+/* =====================================================================
+   PRACTICA — prezența la practica comasată
+   Coordonatorul (profesorul) intră cu contul Google, își trece clasele,
+   service-urile și elevii, numește un elev responsabil la fiecare service
+   și îi trimite pe WhatsApp un link. Responsabilul bifează prezenții, iar
+   prezența apare automat la coordonator.
+   Numele elevilor NU sunt în acest fișier: stau doar în baza de date.
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD1-HQQntx3v66fERfjxFZverIEvCYIpQ4",
+  authDomain: "scoala-soferi-9a750.firebaseapp.com",
+  projectId: "scoala-soferi-9a750",
+  storageBucket: "scoala-soferi-9a750.firebasestorage.app",
+  messagingSenderId: "969178093301",
+  appId: "1:969178093301:web:04ea77974b0248b61797bc"
+};
+const FB_VER = '10.12.2';
+const FUS = 'Europe/Bucharest';
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+// Codul din link: 24 de caractere aleatoare — cine nu are linkul nu îl poate ghici.
+function codSecret(){ const a = new Uint8Array(24); crypto.getRandomValues(a); return Array.from(a, b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join(''); }
+
+/* ---------- Timp: totul se judecă după ora României ---------- */
+function ziAzi(){ return new Intl.DateTimeFormat('en-CA', {timeZone: FUS, year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date()); }
+function ziDin(ms){ return new Intl.DateTimeFormat('en-CA', {timeZone: FUS, year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date(ms)); }
+function oraDin(ms){ return new Intl.DateTimeFormat('ro-RO', {timeZone: FUS, hour:'2-digit', minute:'2-digit', hour12:false}).format(new Date(ms)); }
+function fmtZi(zi){ const [a, l, z] = zi.split('-'); return `${z}.${l}.${a}`; }
+function fmtZiLunga(zi){ const [a, l, z] = zi.split('-').map(Number); return new Intl.DateTimeFormat('ro-RO', {weekday:'long', day:'numeric', month:'long', year:'numeric', timeZone:'UTC'}).format(new Date(Date.UTC(a, l - 1, z))); }
+// REGULA: prezența e „la timp” dacă PRIMA trimitere s-a făcut în ziua respectivă, cel târziu la ora-limită.
+function eIntarziat(primaMs, zi, oraLimita){
+  if (!primaMs) return false;
+  const z = ziDin(primaMs);
+  if (z !== zi) return z > zi;
+  return oraDin(primaMs) > (oraLimita || '23:59');
+}
+function ms(t){ return !t ? 0 : (typeof t === 'number' ? t : (t.toMillis ? t.toMillis() : 0)); }
+
+function toast(text, durata){ const t = $('#toast'); t.textContent = text; t.classList.add('vizibil'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('vizibil'), durata || 2500); }
+function inchideModal(){ $('#modal-loc').innerHTML = ''; }
+function modal(html){ $('#modal-loc').innerHTML = `<div class="modal-fundal" onclick="if(event.target===this)inchideModal()"><div class="modal">${html}</div></div>`; }
+function confirma(text, da, etichetaDa){
+  modal(`<p style="font-size:16px;">${esc(text)}</p><div class="rand" style="justify-content:flex-end;"><button class="btn" onclick="inchideModal()">Renunț</button><button class="btn inchis" id="conf-da">${esc(etichetaDa || 'Da')}</button></div>`);
+  $('#conf-da').onclick = () => { inchideModal(); da(); };
+}
+function incarcaScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+
+let db = null, auth = null;
+async function pornesteFirebase(cuCont){
+  const b = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  await incarcaScript(b + 'firebase-app-compat.js');
+  const rest = [incarcaScript(b + 'firebase-firestore-compat.js')];
+  if (cuCont) rest.push(incarcaScript(b + 'firebase-auth-compat.js'));
+  await Promise.all(rest);
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  if (cuCont) auth = firebase.auth();
+}
+const refLista = cod => db.collection('practica_liste').doc(cod);
+const refZi = (cod, zi) => refLista(cod).collection('zile').doc(zi);
+function dateZi(snap){ if (!snap.exists) return null; const d = snap.data({serverTimestamps: 'estimate'}); return {prezenti: d.prezenti || [], absenti: d.absenti || [], obs: d.obs || '', trimisLa: ms(d.trimisLa), prima: ms(d.prima), deLa: d.deLa || ''}; }
+
+/* =====================================================================
+   ECRANUL ELEVULUI RESPONSABIL  (linkul primit pe WhatsApp: ?l=COD)
+   ===================================================================== */
+const elev = {cod: '', lista: null, zi: '', bifati: new Set(), obs: '', trimis: null, seTrimite: false, eroare: ''};
+async function pornesteElev(cod){
+  elev.cod = cod; elev.zi = ziAzi();
+  $('#app').innerHTML = `<header><div><h1>Prezență practică</h1></div></header><main><p>Se încarcă lista…</p></main>`;
+  try{
+    await pornesteFirebase(false);
+    const s = await refLista(cod).get();
+    if (!s.exists){ elev.eroare = 'Linkul nu mai este valabil. Cere-i profesorului un link nou.'; return deseneazaElev(); }
+    elev.lista = s.data();
+    const z = dateZi(await refZi(cod, elev.zi).get());
+    if (z){ elev.trimis = z; elev.bifati = new Set(z.prezenti); elev.obs = z.obs; }
+  }catch(e){ console.warn(e); elev.eroare = 'Nu am putut încărca lista. Verifică internetul și deschide linkul din nou.'; }
+  deseneazaElev();
+}
+function deseneazaElev(){
+  const L = elev.lista;
+  if (elev.eroare || !L){ $('#app').innerHTML = `<header><div><h1>Prezență practică</h1></div></header><main><div class="centrat"><div class="banner rosu">${esc(elev.eroare || 'Lista nu a putut fi încărcată.')}</div></div></main>`; return; }
+  if (L.activ === false){ $('#app').innerHTML = `<header><div><h1>Prezență practică</h1></div></header><main><div class="centrat"><div class="banner">Această listă a fost închisă de profesor.</div></div></main>`; return; }
+  const acum = Date.now(), trecut = eIntarziat(acum, elev.zi, L.oraLimita);
+  const n = elev.bifati.size, tot = (L.elevi || []).length;
+  const t = elev.trimis;
+  $('#app').innerHTML = `
+  <header><div><h1>${esc(L.firma || 'Practică')}</h1><div class="sub">Clasa ${esc(L.clasa || '')}</div></div><div class="dreapta">${esc(fmtZi(elev.zi))}</div></header>
+  <main><div class="centrat">
+    <p style="margin:0 0 4px; font-weight:700; text-transform:capitalize;">${esc(fmtZiLunga(elev.zi))}</p>
+    <p class="small" style="margin:0 0 14px;">Atinge numele colegilor care <b>sunt prezenți</b>, apoi apasă „Trimite prezența”. Ora-limită: <b>${esc(L.oraLimita || '—')}</b>.</p>
+    ${t ? `<div class="banner" style="background:#DDF0E4; border-color:#A9D5BA; color:#1F5C38;">✔ Prezența a fost trimisă la ${esc(oraDin(t.trimisLa || acum))}. Dacă s-a schimbat ceva, modifică și trimite din nou.</div>` : ''}
+    ${!t && trecut ? `<div class="banner">Ora-limită ${esc(L.oraLimita)} a trecut. Poți trimite în continuare, dar prezența va apărea ca trimisă cu întârziere.</div>` : ''}
+    <ul class="lista-bife">${(L.elevi || []).map(e => { const da = elev.bifati.has(e.id); return `<li class="${da ? 'da' : ''}" onclick="comutaElev('${esc(e.id)}')"><span class="bifa">${da ? '✓' : ''}</span><span>${esc(e.nume)}</span><span class="stare">${da ? 'PREZENT' : 'ABSENT'}</span></li>`; }).join('')}</ul>
+    <label class="camp" style="margin-top:12px;">Observații (opțional)
+      <textarea id="elev-obs" maxlength="500" placeholder="de exemplu: Ionescu a anunțat că întârzie" oninput="elev.obs=this.value">${esc(elev.obs)}</textarea></label>
+    <button class="btn primar" style="width:100%; font-size:18px; min-height:56px;" ${elev.seTrimite ? 'disabled' : ''} onclick="trimiteElev()">${elev.seTrimite ? 'Se trimite…' : (t ? 'Trimite din nou' : 'Trimite prezența')} (${n} din ${tot} prezenți)</button>
+    <p class="small" style="text-align:center; margin-top:14px;">Responsabil: ${esc(L.responsabil || '—')}</p>
+  </div></main>`;
+}
+function comutaElev(id){ if (elev.bifati.has(id)) elev.bifati.delete(id); else elev.bifati.add(id); const y = $('main').scrollTop; deseneazaElev(); $('main').scrollTop = y; }
+function trimiteElev(){
+  const L = elev.lista, toti = (L.elevi || []);
+  const abs = toti.filter(e => !elev.bifati.has(e.id));
+  const text = `Prezenți: ${elev.bifati.size} din ${toti.length}.` + (abs.length ? ` Absenți: ${abs.map(e => e.nume).join(', ')}.` : ' Nu lipsește nimeni.') + ' Trimiți?';
+  confirma(text, async () => {
+    elev.seTrimite = true; deseneazaElev();
+    try{
+      await scrieZi(elev.cod, elev.zi, toti.filter(e => elev.bifati.has(e.id)).map(e => e.id), abs.map(e => e.id), (elev.obs || '').slice(0, 500), 'responsabil');
+      elev.trimis = dateZi(await refZi(elev.cod, elev.zi).get()) || {trimisLa: Date.now()};
+      toast('Prezența a fost trimisă. Mulțumim!', 3500);
+    }catch(e){ console.warn(e); toast('Nu s-a putut trimite. Verifică internetul și încearcă din nou.', 5000); }
+    elev.seTrimite = false; deseneazaElev();
+  }, 'Da, trimite');
+}
+// Scrierea unei zile. „prima” (ora primei trimiteri) se pune o singură dată și nu se mai schimbă —
+// după ea se judecă dacă prezența a fost făcută la timp.
+async function scrieZi(cod, zi, prezenti, absenti, obs, deLa){
+  const acum = firebase.firestore.FieldValue.serverTimestamp();
+  const r = refZi(cod, zi), s = await r.get();
+  if (s.exists) await r.update({prezenti, absenti, obs, deLa, trimisLa: acum});
+  else await r.set({prezenti, absenti, obs, deLa, trimisLa: acum, prima: acum});
+}
+
+/* =====================================================================
+   ECRANUL COORDONATORULUI
+   ===================================================================== */
+let state = null, utilizator = null, tab = 'azi', ziAleasa = ziAzi(), clasaAleasa = '';
+const ascultatori = {}; let ziAscultata = '';
+const stareGoala = () => ({v: 1, actualizat: 0, clase: [], setari: {coordonator: '', ultimBackup: 0}, prezente: {}});
+const cheieLocala = () => 'practica_state_v1_' + utilizator.uid;
+const refStare = () => db.collection('practica').doc(utilizator.uid).collection('date').doc('stare');
+
+// Completează câmpurile lipsă când se schimbă structura; nu șterge nimic.
+function migreazaDate(s){
+  s = Object.assign(stareGoala(), s || {});
+  s.setari = Object.assign({coordonator: '', ultimBackup: 0}, s.setari || {});
+  s.prezente = s.prezente || {};
+  (s.clase || []).forEach(c => {
+    c.id = c.id || uid(); c.oraLimita = c.oraLimita || '08:30'; c.firme = c.firme || []; c.elevi = c.elevi || []; c.arhivata = !!c.arhivata;
+    c.firme.forEach(f => { f.id = f.id || uid(); f.cod = f.cod || codSecret(); f.responsabilId = f.responsabilId || ''; f.arhivata = !!f.arhivata; });
+    c.elevi.forEach(e => { e.id = e.id || uid(); e.telefon = e.telefon || ''; e.arhivat = !!e.arhivat; });
+  });
+  return s;
+}
+let tSalvare = null, tNor = null, ultimaSalvare = null;
+function saveState(){ state.actualizat = Date.now(); opresteAscultatori(); clearTimeout(tSalvare); tSalvare = setTimeout(saveStateNow, 150); clearTimeout(tNor); tNor = setTimeout(urcaInNor, 1200); }
+function saveStateNow(){ if (!state || !utilizator) return; try{ localStorage.setItem(cheieLocala(), JSON.stringify(state)); ultimaSalvare = new Date(); const i = $('#salvat'); if (i) i.textContent = 'Salvat ' + ultimaSalvare.toLocaleTimeString('ro-RO'); }catch(e){ toast('Nu am putut salva pe dispozitiv.', 4000); } }
+async function urcaInNor(){
+  if (!utilizator || !db) return;
+  try{
+    await refStare().set({json: JSON.stringify(state), actualizat: state.actualizat});
+    await publicaListe();
+    stareNor = 'ok';
+  }catch(e){ console.warn('nor', e); stareNor = 'eroare'; }
+  const n = $('#nor'); if (n) n.textContent = textNor();
+}
+let stareNor = '';
+const textNor = () => stareNor === 'ok' ? '☁ Sincronizat' : stareNor === 'eroare' ? '⚠ Nesincronizat' : '';
+window.addEventListener('beforeunload', saveStateNow);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveStateNow(); });
+
+// Lista pe care o vede elevul responsabil: doar clasa, service-ul, ora-limită și numele colegilor lui.
+let listePublicate = {};
+async function publicaListe(){
+  for (const c of state.clase) for (const f of c.firme){
+    const elevi = eleviFirma(c, f).map(e => ({id: e.id, nume: e.nume}));
+    const resp = c.elevi.find(e => e.id === f.responsabilId);
+    const doc = {owner: utilizator.uid, clasa: c.nume, firma: f.nume, oraLimita: c.oraLimita, elevi, responsabil: resp ? resp.nume : '', activ: !(c.arhivata || f.arhivata)};
+    const amprenta = JSON.stringify(doc);
+    if (listePublicate[f.cod] === amprenta) continue;
+    await refLista(f.cod).set(doc);
+    listePublicate[f.cod] = amprenta;
+  }
+}
+
+async function pornesteCoordonator(){
+  $('#app').innerHTML = `<header><div><h1>Practică — prezență</h1></div></header><main><p>Se pornește…</p></main>`;
+  try{ await pornesteFirebase(true); }
+  catch(e){ $('#app').innerHTML = `<header><div><h1>Practică — prezență</h1></div></header><main><div class="centrat"><div class="banner rosu">Aplicația are nevoie de internet ca să pornească. Verifică conexiunea și reîncarcă pagina.</div></div></main>`; return; }
+  auth.getRedirectResult().catch(e => { if (e && e.code) toast('Intrarea în cont n-a reușit (' + e.code + ').', 4500); });
+  auth.onAuthStateChanged(u => { if (u) laConectare(u); else ecranIntrare(); });
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+}
+function ecranIntrare(){
+  utilizator = null; state = null; opresteAscultatori();
+  $('#app').innerHTML = `<header><div><h1>Practică — prezență</h1><div class="sub">Prezența la practica comasată</div></div></header>
+  <main><div class="centrat"><div class="card">
+    <h3>Intră cu contul Google</h3>
+    <p>Clasele, service-urile și prezențele se păstrează în contul tău și le vezi doar tu, de pe orice telefon sau calculator.</p>
+    <button class="btn primar" style="width:100%;" onclick="intraCont()">Intră cu Google</button>
+    <p class="small" style="margin-bottom:0;">Elevii responsabili nu au nevoie de cont: ei primesc de la tine un link pe WhatsApp.</p>
+  </div></div></main>`;
+}
+function intraCont(){
+  const p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({prompt: 'select_account'});
+  auth.signInWithPopup(p).catch(e => {
+    const c = e && e.code;
+    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(c)) return auth.signInWithRedirect(p);
+    if (c !== 'auth/popup-closed-by-user' && c !== 'auth/cancelled-popup-request') toast('Nu am putut intra în cont (' + c + ').', 4500);
+  });
+}
+function iesiCont(){ confirma('Ieși din cont pe acest dispozitiv? Datele rămân în contul tău.', () => { saveStateNow(); auth.signOut(); }, 'Da, ieși'); }
+async function laConectare(u){
+  utilizator = {uid: u.uid, email: u.email || '', nume: u.displayName || ''};
+  let local = null; try{ local = JSON.parse(localStorage.getItem(cheieLocala()) || 'null'); }catch(e){}
+  state = migreazaDate(local);
+  if (!state.setari.coordonator) state.setari.coordonator = utilizator.nume;
+  deseneaza();
+  // Aceeași persoană, mai multe dispozitive: rămâne varianta modificată cel mai recent.
+  try{
+    const s = await refStare().get();
+    if (s.exists){
+      const nor = migreazaDate(JSON.parse(s.data().json || '{}'));
+      if ((nor.actualizat || 0) > (state.actualizat || 0)){
+        if (local && local.clase && local.clase.length) localStorage.setItem(cheieLocala() + '_inainte_de_nor', JSON.stringify(local));
+        Object.keys(state.prezente).forEach(k => { nor.prezente[k] = Object.assign({}, state.prezente[k], nor.prezente[k] || {}); });
+        state = nor; saveStateNow();
+      } else if ((state.actualizat || 0) > (nor.actualizat || 0)) urcaInNor();
+    } else if (state.clase.length) urcaInNor();
+    stareNor = 'ok';
+  }catch(e){ console.warn(e); stareNor = 'eroare'; }
+  deseneaza();
+}
+
+/* ---------- ajutoare pentru date ---------- */
+const clasaDupaId = id => state.clase.find(c => c.id === id);
+const claseActive = () => state.clase.filter(c => !c.arhivata);
+const eleviFirma = (c, f) => c.elevi.filter(e => e.firmaId === f.id && !e.arhivat).sort((a, b) => a.nume.localeCompare(b.nume, 'ro'));
+const numeElev = (c, id) => { const e = c.elevi.find(x => x.id === id); return e ? e.nume : '(elev șters)'; };
+function linkFirma(f){ return location.origin + location.pathname.replace(/index\.html$/, '') + '?l=' + f.cod; }
+function telWhatsApp(t){ const d = String(t || '').replace(/\D/g, ''); if (!d) return ''; if (d.startsWith('40')) return d; if (d.startsWith('0')) return '4' + d; return d; }
+function mesajWhatsApp(c, f){ return `Bună dimineața! Prezența la practică — ${f.nume}, clasa ${c.nume}. Bifează colegii prezenți până la ora ${c.oraLimita}: ${linkFirma(f)}`; }
+function trimiteWhatsApp(cid, fid){
+  const c = clasaDupaId(cid), f = c.firme.find(x => x.id === fid), r = c.elevi.find(e => e.id === f.responsabilId);
+  const tel = r ? telWhatsApp(r.telefon) : '';
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(mesajWhatsApp(c, f)), '_blank');
+}
+async function copiazaLink(cid, fid){ const c = clasaDupaId(cid), f = c.firme.find(x => x.id === fid); try{ await navigator.clipboard.writeText(linkFirma(f)); toast('Link copiat.'); }catch(e){ modal(`<h3>Linkul</h3><input style="width:100%;" readonly value="${esc(linkFirma(f))}" onfocus="this.select()"><div class="rand" style="justify-content:flex-end; margin-top:12px;"><button class="btn" onclick="inchideModal()">Închide</button></div>`); } }
+const prezenta = (f, zi) => (state.prezente[f.cod] || {})[zi] || null;
+function tinePrezenta(cod, zi, d){ state.prezente[cod] = state.prezente[cod] || {}; if (d) state.prezente[cod][zi] = d; else delete state.prezente[cod][zi]; saveStateNow(); }
+
+/* ---------- ascultare în timp real pentru ziua afișată ---------- */
+function opresteAscultatori(){ Object.keys(ascultatori).forEach(k => { try{ ascultatori[k](); }catch(e){} delete ascultatori[k]; }); ziAscultata = ''; }
+function asculta(zi){
+  if (ziAscultata === zi) return;
+  opresteAscultatori(); ziAscultata = zi;
+  claseActive().forEach(c => c.firme.filter(f => !f.arhivata).forEach(f => {
+    ascultatori[f.cod] = refZi(f.cod, zi).onSnapshot(s => { tinePrezenta(f.cod, zi, dateZi(s)); if (tab === 'azi' && ziAleasa === zi && !$('#modal-loc').innerHTML) deseneaza(); }, e => console.warn('ascultare', e));
+  }));
+}
+
+/* ---------- cadrul aplicației ---------- */
+const TABURI = [['azi', 'Azi'], ['clase', 'Clase'], ['prezenta', 'Prezență'], ['setari', 'Setări']];
+function mergiLa(t){ tab = t; deseneaza(); $('main').scrollTop = 0; }
+function deseneaza(){
+  if (!state) return;
+  const y = $('main') ? $('main').scrollTop : 0;
+  const butoane = TABURI.map(([k, n]) => `<button class="${tab === k ? 'active' : ''}" onclick="mergiLa('${k}')">${n}</button>`).join('');
+  $('#app').innerHTML = `
+  <header><div style="min-width:0;"><h1>Practică — prezență</h1><div class="sub">${esc(state.setari.coordonator || utilizator.email)}</div></div>
+    <div class="dreapta"><div><div id="nor">${textNor()}</div><div id="salvat">${ultimaSalvare ? 'Salvat ' + ultimaSalvare.toLocaleTimeString('ro-RO') : ''}</div></div></div></header>
+  <div class="body-wrap"><nav class="sidebar">${butoane}</nav><main>${({azi: tabAzi, clase: tabClase, prezenta: tabPrezenta, setari: tabSetari})[tab]()}</main></div>
+  <nav class="bottombar">${butoane}</nav>`;
+  $('main').scrollTop = y;
+  if (tab === 'azi') asculta(ziAleasa); else if (tab !== 'prezenta') opresteAscultatori();
+}
+function bannerBackup(){
+  if (!state.clase.length) return '';
+  const zile = Math.floor((Date.now() - (state.setari.ultimBackup || 0)) / 86400000);
+  return zile >= 14 ? `<div class="banner fara-print">${state.setari.ultimBackup ? 'Nu ai mai făcut o copie de siguranță de ' + zile + ' zile' : 'Nu ai făcut încă nicio copie de siguranță'}. <a href="#" onclick="mergiLa('setari');return false;">Fă una acum</a>.</div>` : '';
+}
+
+/* ---------- AZI ---------- */
+function tabAzi(){
+  const clase = claseActive().filter(c => c.firme.some(f => !f.arhivata));
+  if (!clase.length) return `<h2>Azi</h2><p class="tab-desc">${esc(fmtZiLunga(ziAleasa))}</p><div class="card"><p>Încă nu ai nicio clasă cu service-uri. Începe din tabul <b>Clase</b>: adaugi clasa, apoi imporți repartizarea din Excel sau o scrii de mână.</p><button class="btn primar" onclick="mergiLa('clase')">Mergi la Clase</button></div>`;
+  let trimise = 0, total = 0;
+  const html = clase.map(c => {
+    const carduri = c.firme.filter(f => !f.arhivata).map(f => {
+      const el = eleviFirma(c, f), p = prezenta(f, ziAleasa), r = c.elevi.find(e => e.id === f.responsabilId);
+      total++; if (p) trimise++;
+      let stare = `<span class="eticheta lipsa">Netrimis</span>`, detalii = `<p class="small" style="margin:8px 0;">${el.length} elevi · ora-limită ${esc(c.oraLimita)}</p>`;
+      if (p){
+        const tarziu = eIntarziat(p.prima, ziAleasa, c.oraLimita);
+        stare = `<span class="eticheta ${tarziu ? 'tarziu' : 'ok'}">${tarziu ? 'Trimis târziu' : 'Trimis'} ${esc(oraDin(p.prima || p.trimisLa))}</span>`;
+        detalii = `<p style="margin:8px 0;"><b>${p.prezenti.length} prezenți</b> din ${p.prezenti.length + p.absenti.length}${p.absenti.length ? ` · <span style="color:var(--danger);">Absenți: ${esc(p.absenti.map(id => numeElev(c, id)).join(', '))}</span>` : ' · nu lipsește nimeni'}</p>`
+          + (p.obs ? `<p class="small" style="margin:0 0 8px;">Observații: ${esc(p.obs)}</p>` : '')
+          + `<p class="small" style="margin:0 0 8px;">${p.deLa === 'coordonator' ? 'Completat de tine' : 'Trimis de responsabil'}${p.trimisLa && p.prima && p.trimisLa - p.prima > 60000 ? ` · modificat la ${esc(oraDin(p.trimisLa))}` : ''}</p>`;
+      }
+      return `<div class="card"><div class="rand intre"><h3 style="margin:0;">${esc(f.nume)}</h3>${stare}</div>
+        <p class="small" style="margin:4px 0 0;">Responsabil: ${r ? esc(r.nume) : '<span style="color:var(--danger);">nenumit</span>'}</p>${detalii}
+        <div class="rand fara-print"><button class="btn primar mic" onclick="trimiteWhatsApp('${c.id}','${f.id}')">Trimite linkul pe WhatsApp</button><button class="btn mic" onclick="copiazaLink('${c.id}','${f.id}')">Copiază linkul</button><button class="btn mic" onclick="completezEu('${c.id}','${f.id}')">${p ? 'Corectează' : 'Completez eu'}</button></div></div>`;
+    }).join('');
+    return `<h3 style="margin-top:18px;">Clasa ${esc(c.nume)}</h3>${carduri}`;
+  }).join('');
+  return `<h2>Azi</h2><p class="tab-desc" style="text-transform:capitalize;">${esc(fmtZiLunga(ziAleasa))}</p>${bannerBackup()}
+  <div class="card rand intre fara-print"><div class="rand"><label class="small">Ziua <input type="date" value="${ziAleasa}" onchange="if(this.value){ziAleasa=this.value;deseneaza();}"></label>${ziAleasa !== ziAzi() ? `<button class="btn mic" onclick="ziAleasa=ziAzi();deseneaza()">Înapoi la azi</button>` : ''}</div><div><b>${trimise} din ${total}</b> service-uri au trimis prezența</div></div>${html}`;
+}
+function completezEu(cid, fid){
+  const c = clasaDupaId(cid), f = c.firme.find(x => x.id === fid), el = eleviFirma(c, f), p = prezenta(f, ziAleasa);
+  const bif = new Set(p ? p.prezenti : []);
+  window._bif = bif;
+  const lista = () => el.map(e => `<li class="${bif.has(e.id) ? 'da' : ''}" onclick="_bif.has('${e.id}')?_bif.delete('${e.id}'):_bif.add('${e.id}'); document.getElementById('m-lista').innerHTML=_listaM()"><span class="bifa">${bif.has(e.id) ? '✓' : ''}</span><span>${esc(e.nume)}</span><span class="stare">${bif.has(e.id) ? 'PREZENT' : 'ABSENT'}</span></li>`).join('');
+  window._listaM = lista;
+  modal(`<h3>${esc(f.nume)} — ${esc(fmtZi(ziAleasa))}</h3><p class="small">Atinge elevii prezenți. Completarea ta apare ca „Completat de tine”.</p><ul class="lista-bife" id="m-lista">${lista()}</ul>
+    <label class="camp">Observații<textarea id="m-obs" maxlength="500">${esc(p ? p.obs : '')}</textarea></label>
+    <div class="rand" style="justify-content:flex-end;"><button class="btn" onclick="inchideModal()">Renunț</button><button class="btn inchis" id="m-salv">Salvează</button></div>`);
+  $('#m-salv').onclick = async () => {
+    const obs = $('#m-obs').value.slice(0, 500);
+    try{ await scrieZi(f.cod, ziAleasa, el.filter(e => bif.has(e.id)).map(e => e.id), el.filter(e => !bif.has(e.id)).map(e => e.id), obs, 'coordonator'); inchideModal(); toast('Prezența a fost salvată.'); tinePrezenta(f.cod, ziAleasa, dateZi(await refZi(f.cod, ziAleasa).get())); deseneaza(); }
+    catch(e){ console.warn(e); toast('Nu s-a putut salva. Verifică internetul.', 4000); }
+  };
+}
+
+/* ---------- CLASE ---------- */
+function tabClase(){
+  const lista = state.clase.filter(c => !c.arhivata).map(c => {
+    const firme = c.firme.filter(f => !f.arhivata).map(f => {
+      const el = eleviFirma(c, f);
+      return `<details class="firma"><summary>${esc(f.nume)} <span class="small">· ${el.length} elevi${f.responsabilId ? '' : ' · <span style="color:var(--danger);">fără responsabil</span>'}</span></summary><div class="in">
+        <label class="camp">Elevul responsabil<select onchange="seteazaResponsabil('${c.id}','${f.id}',this.value)"><option value="">— alege —</option>${el.map(e => `<option value="${e.id}" ${e.id === f.responsabilId ? 'selected' : ''}>${esc(e.nume)}</option>`).join('')}</select></label>
+        <table><tr><th>Elev</th><th>Telefon (WhatsApp)</th><th class="c"></th></tr>${el.map(e => `<tr><td>${esc(e.nume)}</td><td>${esc(e.telefon) || '<span class="small">—</span>'}</td><td class="c"><button class="btn mic" onclick="editElev('${c.id}','${e.id}')">Modifică</button></td></tr>`).join('') || '<tr><td colspan="3" class="small">Niciun elev încă.</td></tr>'}</table>
+        <div class="rand" style="margin-top:10px;"><button class="btn mic" onclick="editElev('${c.id}','','${f.id}')">+ Elev</button><button class="btn mic" onclick="editFirma('${c.id}','${f.id}')">Redenumește</button><button class="btn mic pericol" onclick="arhiveazaFirma('${c.id}','${f.id}')">Arhivează</button></div></div></details>`;
+    }).join('');
+    return `<div class="card"><div class="rand intre"><h3 style="margin:0;">Clasa ${esc(c.nume)}</h3><span class="small">ora-limită ${esc(c.oraLimita)} · ${c.elevi.filter(e => !e.arhivat).length} elevi · ${c.firme.filter(f => !f.arhivata).length} service-uri</span></div>
+      <div style="margin-top:12px;">${firme || '<p class="small">Niciun service încă. Importă repartizarea din Excel sau adaugă un service.</p>'}</div>
+      <div class="rand"><button class="btn mic primar" onclick="alegeExcel('${c.id}')">Importă din Excel</button><button class="btn mic" onclick="editFirma('${c.id}','')">+ Service</button><button class="btn mic" onclick="editClasa('${c.id}')">Modifică clasa</button><button class="btn mic pericol" onclick="arhiveazaClasa('${c.id}')">Arhivează</button></div></div>`;
+  }).join('');
+  const arh = state.clase.filter(c => c.arhivata);
+  return `<h2>Clase</h2><p class="tab-desc">Clasele pe care le ai la practică, cu service-urile și elevii repartizați la fiecare.</p>
+  <div class="rand" style="margin-bottom:14px;"><button class="btn inchis" onclick="editClasa('')">+ Clasă nouă</button></div>${lista || '<div class="card"><p style="margin:0;">Nu ai nicio clasă încă. Apasă „+ Clasă nouă”.</p></div>'}
+  ${arh.length ? `<h3 style="margin-top:20px;">Arhivate</h3>${arh.map(c => `<div class="card rand intre"><span>Clasa ${esc(c.nume)}</span><button class="btn mic" onclick="clasaDupaId('${c.id}').arhivata=false;saveState();deseneaza()">Readu</button></div>`).join('')}` : ''}
+  <input type="file" id="fisier-excel" accept=".xlsx,.xls" style="display:none;" onchange="importaExcel(this)">`;
+}
+function editClasa(id){
+  const c = id ? clasaDupaId(id) : {nume: '', oraLimita: '08:30'};
+  modal(`<h3>${id ? 'Modifică clasa' : 'Clasă nouă'}</h3>
+    <label class="camp">Numele clasei<input id="c-nume" value="${esc(c.nume)}" placeholder="de exemplu: a X-a F"></label>
+    <label class="camp">Ora-limită pentru prezență<input id="c-ora" type="time" value="${esc(c.oraLimita)}"></label>
+    <div class="rand" style="justify-content:flex-end;"><button class="btn" onclick="inchideModal()">Renunț</button><button class="btn inchis" id="c-salv">Salvează</button></div>`);
+  $('#c-salv').onclick = () => {
+    const nume = $('#c-nume').value.trim(); if (!nume) return toast('Scrie numele clasei.');
+    if (id){ c.nume = nume; c.oraLimita = $('#c-ora').value || '08:30'; }
+    else state.clase.push({id: uid(), nume, oraLimita: $('#c-ora').value || '08:30', firme: [], elevi: [], arhivata: false});
+    saveState(); inchideModal(); deseneaza();
+  };
+}
+function editFirma(cid, fid){
+  const c = clasaDupaId(cid), f = fid ? c.firme.find(x => x.id === fid) : {nume: ''};
+  modal(`<h3>${fid ? 'Redenumește service-ul' : 'Service nou'}</h3><label class="camp">Denumirea agentului economic<input id="f-nume" value="${esc(f.nume)}"></label>
+    <div class="rand" style="justify-content:flex-end;"><button class="btn" onclick="inchideModal()">Renunț</button><button class="btn inchis" id="f-salv">Salvează</button></div>`);
+  $('#f-salv').onclick = () => {
+    const nume = $('#f-nume').value.trim(); if (!nume) return toast('Scrie denumirea.');
+    if (fid) f.nume = nume; else c.firme.push({id: uid(), nume, cod: codSecret(), responsabilId: '', arhivata: false});
+    saveState(); inchideModal(); deseneaza();
+  };
+}
+function editElev(cid, eid, fid){
+  const c = clasaDupaId(cid), e = eid ? c.elevi.find(x => x.id === eid) : {nume: '', telefon: '', firmaId: fid};
+  modal(`<h3>${eid ? 'Modifică elevul' : 'Elev nou'}</h3>
+    <label class="camp">Numele și prenumele<input id="e-nume" value="${esc(e.nume)}"></label>
+    <label class="camp">Telefon (pentru WhatsApp)<input id="e-tel" type="tel" value="${esc(e.telefon)}" placeholder="07…"></label>
+    <label class="camp">Service<select id="e-firma">${c.firme.filter(f => !f.arhivata).map(f => `<option value="${f.id}" ${f.id === e.firmaId ? 'selected' : ''}>${esc(f.nume)}</option>`).join('')}</select></label>
+    <div class="rand intre">${eid ? `<button class="btn pericol" id="e-arh">Scoate din listă</button>` : '<span></span>'}<span class="rand"><button class="btn" onclick="inchideModal()">Renunț</button><button class="btn inchis" id="e-salv">Salvează</button></span></div>`);
+  $('#e-salv').onclick = () => {
+    const nume = $('#e-nume').value.trim(); if (!nume) return toast('Scrie numele elevului.');
+    const noua = $('#e-firma').value;
+    if (eid){ if (e.firmaId !== noua) c.firme.forEach(f => { if (f.responsabilId === e.id) f.responsabilId = ''; }); e.nume = nume; e.telefon = $('#e-tel').value.trim(); e.firmaId = noua; }
+    else c.elevi.push({id: uid(), nume, telefon: $('#e-tel').value.trim(), firmaId: noua, arhivat: false});
+    saveState(); inchideModal(); deseneaza();
+  };
+  if (eid) $('#e-arh').onclick = () => confirma(`Scoți elevul „${e.nume}” din listă? Prezențele lui de până acum rămân în evidență.`, () => { e.arhivat = true; c.firme.forEach(f => { if (f.responsabilId === e.id) f.responsabilId = ''; }); saveState(); deseneaza(); }, 'Da, scoate');
+}
+function seteazaResponsabil(cid, fid, eid){ clasaDupaId(cid).firme.find(f => f.id === fid).responsabilId = eid; saveState(); toast(eid ? 'Responsabil numit.' : 'Responsabil scos.'); }
+function arhiveazaFirma(cid, fid){ const f = clasaDupaId(cid).firme.find(x => x.id === fid); confirma(`Arhivezi service-ul „${f.nume}”? Linkul lui nu va mai funcționa, dar prezențele rămân în evidență.`, () => { f.arhivata = true; saveState(); deseneaza(); }, 'Da, arhivează'); }
+function arhiveazaClasa(cid){ const c = clasaDupaId(cid); confirma(`Arhivezi clasa ${c.nume}? Linkurile ei nu vor mai funcționa, dar datele rămân și o poți readuce oricând.`, () => { c.arhivata = true; saveState(); deseneaza(); }, 'Da, arhivează'); }
+
+/* Import din Excelul de repartizare: caută rândul de antet cu „NUMELE … ELEVULUI” și „DENUMIRE AGENT”. */
+let clasaImport = '';
+function alegeExcel(cid){ clasaImport = cid; const i = $('#fisier-excel'); i.value = ''; i.click(); }
+const fara = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+function citesteRepartizare(randuri){
+  for (let i = 0; i < Math.min(randuri.length, 40); i++){
+    const r = (randuri[i] || []).map(fara);
+    const cN = r.findIndex(x => /NUME/.test(x) && !/AGENT|FIRM|MANAGER|TUTORE/.test(x)), cA = r.findIndex(x => /AGENT|SERVICE|FIRMA|OPERATOR|SOCIETATE/.test(x) && !/TELEFON|ADRESA/.test(x));
+    if (cN < 0 || cA < 0) continue;
+    const cT = r.findIndex(x => /TELEFON/.test(x) && /ELEV/.test(x));
+    const out = [];
+    for (let j = i + 1; j < randuri.length; j++){
+      const x = randuri[j] || [], nume = String(x[cN] == null ? '' : x[cN]).replace(/\s+/g, ' ').trim(), agent = String(x[cA] == null ? '' : x[cA]).replace(/\s+/g, ' ').trim();
+      if (!nume || !agent) continue;
+      let tel = cT >= 0 ? String(x[cT] == null ? '' : x[cT]).replace(/\s+/g, '') : '';
+      if (/^7\d{8}$/.test(tel)) tel = '0' + tel;   // Excel taie zeroul de la început
+      out.push({nume, agent, tel});
+    }
+    return out;
+  }
+  return null;
+}
+function importaExcel(input){
+  const fis = input.files[0]; if (!fis) return;
+  const cit = new FileReader();
+  cit.onload = () => {
+    try{
+      const wb = XLSX.read(cit.result, {type: 'array'});
+      let rep = null;
+      for (const n of wb.SheetNames){ rep = citesteRepartizare(XLSX.utils.sheet_to_json(wb.Sheets[n], {header: 1, raw: true, defval: ''})); if (rep && rep.length) break; }
+      if (!rep || !rep.length) return modal(`<h3>Nu am găsit repartizarea</h3><p>Fișierul trebuie să aibă un rând de antet cu o coloană „Numele și prenumele elevului” și una „Denumire agent”, iar sub el câte un rând pentru fiecare elev.</p><div class="rand" style="justify-content:flex-end;"><button class="btn" onclick="inchideModal()">Am înțeles</button></div>`);
+      const c = clasaDupaId(clasaImport); let noi = 0, mutati = 0, firmeNoi = 0;
+      rep.forEach(x => {
+        let f = c.firme.find(y => fara(y.nume) === fara(x.agent));
+        if (!f){ f = {id: uid(), nume: x.agent, cod: codSecret(), responsabilId: '', arhivata: false}; c.firme.push(f); firmeNoi++; }
+        f.arhivata = false;
+        let e = c.elevi.find(y => fara(y.nume) === fara(x.nume));   // fără dubluri la reimport
+        if (!e){ c.elevi.push({id: uid(), nume: x.nume, telefon: x.tel, firmaId: f.id, arhivat: false}); noi++; }
+        else { if (e.firmaId !== f.id){ c.firme.forEach(y => { if (y.responsabilId === e.id) y.responsabilId = ''; }); e.firmaId = f.id; mutati++; } if (x.tel && !e.telefon) e.telefon = x.tel; e.arhivat = false; }
+      });
+      saveState(); deseneaza(); toast(`Import: ${noi} elevi noi, ${mutati} mutați, ${firmeNoi} service-uri noi.`, 4500);
+    }catch(e){ console.warn(e); toast('Nu am putut citi fișierul Excel.', 4000); }
+  };
+  cit.readAsArrayBuffer(fis);
+}
+
+/* ---------- PREZENȚĂ (centralizator) ---------- */
+let seIncarca = false, incarcatPentru = '';
+async function incarcaPrezente(c){
+  seIncarca = true;
+  try{ for (const f of c.firme){ const q = await refLista(f.cod).collection('zile').get(); state.prezente[f.cod] = state.prezente[f.cod] || {}; q.forEach(d => { state.prezente[f.cod][d.id] = dateZi(d); }); } saveStateNow(); incarcatPentru = c.id; }
+  catch(e){ console.warn(e); toast('Nu am putut aduce prezențele din nor; le arăt pe cele de pe dispozitiv.', 4500); incarcatPentru = c.id; }
+  seIncarca = false; if (tab === 'prezenta') deseneaza();
+}
+function zileClasa(c){ const z = new Set(); c.firme.forEach(f => Object.keys(state.prezente[f.cod] || {}).forEach(k => z.add(k))); return Array.from(z).sort(); }
+// Starea unui elev într-o zi: 'P', 'A' sau '' (service-ul n-a trimis prezența ori elevul nu era pe listă).
+function stareElev(c, e, zi){
+  for (const f of c.firme){ const p = (state.prezente[f.cod] || {})[zi]; if (!p) continue; if (p.prezenti.includes(e.id)) return 'P'; if (p.absenti.includes(e.id)) return 'A'; }
+  return '';
+}
+function tabPrezenta(){
+  const clase = state.clase.filter(c => !c.arhivata);
+  if (!clase.length) return `<h2>Prezență</h2><p class="tab-desc">Centralizatorul pe zile.</p><div class="card"><p style="margin:0;">Nu ai nicio clasă încă.</p></div>`;
+  if (!clasaDupaId(clasaAleasa) || clasaDupaId(clasaAleasa).arhivata) clasaAleasa = clase[0].id;
+  const c = clasaDupaId(clasaAleasa);
+  if (incarcatPentru !== c.id && !seIncarca) incarcaPrezente(c);
+  const zile = zileClasa(c);
+  let randuri = '';
+  c.firme.forEach(f => {
+    const el = c.elevi.filter(e => e.firmaId === f.id && (!e.arhivat || zile.some(z => stareElev(c, e, z)))).sort((a, b) => a.nume.localeCompare(b.nume, 'ro'));
+    if (!el.length) return;
+    randuri += `<tr><th colspan="${zile.length + 3}">${esc(f.nume)}</th></tr>` + el.map((e, i) => {
+      let abs = 0; const celule = zile.map(z => { const s = stareElev(c, e, z); if (s === 'A') abs++; return `<td class="c ${s}">${s || '–'}</td>`; }).join('');
+      return `<tr><td class="c">${i + 1}</td><td style="white-space:nowrap;">${esc(e.nume)}</td>${celule}<td class="c"><b>${abs}</b></td></tr>`;
+    }).join('');
+  });
+  return `<h2>Prezență</h2><p class="tab-desc fara-print">Centralizatorul pe zile: P = prezent, A = absent, – = service-ul nu a trimis prezența în ziua aceea.</p>
+  <div class="card rand intre fara-print"><label class="small">Clasa <select onchange="clasaAleasa=this.value;deseneaza()">${clase.map(x => `<option value="${x.id}" ${x.id === c.id ? 'selected' : ''}>${esc(x.nume)}</option>`).join('')}</select></label>
+    <div class="rand"><button class="btn mic" onclick="incarcatPentru='';deseneaza()">Reîmprospătează</button><button class="btn mic" onclick="window.print()">Tipărește / Salvează PDF</button><button class="btn mic primar" onclick="exportExcel()">Export Excel</button></div></div>
+  <div class="numai-print"><h2>Prezența la practica comasată — clasa ${esc(c.nume)}</h2><p>Coordonator: ${esc(state.setari.coordonator)}</p></div>
+  <div class="card">${seIncarca ? '<p class="small">Se aduc prezențele…</p>' : ''}${zile.length ? `<div class="tabel-wrap"><table><tr><th class="c">Nr.</th><th>Elev</th>${zile.map(z => `<th class="c">${z.slice(8)}.${z.slice(5, 7)}</th>`).join('')}<th class="c">Absențe</th></tr>${randuri}</table></div>` : '<p style="margin:0;">Încă nu a fost trimisă nicio prezență pentru această clasă.</p>'}</div>`;
+}
+
+/* ---------- Export Excel: toate datele, câte o foaie fiecare (pentru citit; restaurarea se face din JSON) ---------- */
+function exportExcel(){
+  if (typeof XLSX === 'undefined') return toast('Exportul Excel nu e gata încă; încearcă din nou în câteva secunde.');
+  const wb = XLSX.utils.book_new();
+  const foaie = (nume, aoa) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), nume.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31));
+  const trimiteri = [['Clasa', 'Service', 'Ziua', 'Prima trimitere', 'La timp', 'Ultima modificare', 'Completat de', 'Prezenți', 'Absenți', 'Numele absenților', 'Observații']];
+  const elevi = [['Clasa', 'Service', 'Elev', 'Telefon', 'Responsabil', 'Scos din listă']];
+  state.clase.forEach(c => {
+    const zile = zileClasa(c), m = [['Service', 'Nr.', 'Elev'].concat(zile.map(fmtZi)).concat(['Absențe'])];
+    c.firme.forEach(f => {
+      c.elevi.filter(e => e.firmaId === f.id).sort((a, b) => a.nume.localeCompare(b.nume, 'ro')).forEach((e, i) => {
+        const st = zile.map(z => stareElev(c, e, z)); m.push([f.nume, i + 1, e.nume].concat(st).concat([st.filter(x => x === 'A').length]));
+        elevi.push([c.nume, f.nume, e.nume, e.telefon, f.responsabilId === e.id ? 'da' : '', e.arhivat ? 'da' : '']);
+      });
+      Object.keys(state.prezente[f.cod] || {}).sort().forEach(z => { const p = state.prezente[f.cod][z]; if (!p) return;
+        trimiteri.push([c.nume, f.nume, fmtZi(z), p.prima ? oraDin(p.prima) : '', eIntarziat(p.prima, z, c.oraLimita) ? 'nu' : 'da', p.trimisLa ? oraDin(p.trimisLa) : '', p.deLa === 'coordonator' ? 'coordonator' : 'responsabil', p.prezenti.length, p.absenti.length, p.absenti.map(id => numeElev(c, id)).join(', '), p.obs]); });
+    });
+    foaie('Prezență ' + c.nume, m);
+  });
+  foaie('Trimiteri', trimiteri); foaie('Elevi', elevi);
+  XLSX.writeFile(wb, `practica-prezenta-${ziAzi()}.xlsx`);
+}
+
+/* ---------- SETĂRI ---------- */
+function tabSetari(){
+  return `<h2>Setări</h2><p class="tab-desc">Contul, copiile de siguranță și datele tale.</p>
+  <div class="card"><h3>Cont</h3><p>Conectat ca <b>${esc(utilizator.email)}</b>. Datele sunt vizibile doar din acest cont.</p>
+    <label class="camp">Numele coordonatorului (apare pe rapoarte)<input value="${esc(state.setari.coordonator)}" onchange="state.setari.coordonator=this.value.trim();saveState();"></label>
+    <button class="btn" onclick="iesiCont()">Ieși din cont</button></div>
+  <div class="card"><h3>Copie de siguranță</h3>
+    <p class="small">Fișierul JSON reface complet aplicația. Excelul este pentru citit și pentru justificarea activității; din el nu se poate restaura.</p>
+    <div class="rand"><button class="btn inchis" onclick="backupJSON()">Salvează copia (JSON)</button><button class="btn" onclick="document.getElementById('fisier-json').click()">Restaurează din copie</button><button class="btn primar" onclick="exportExcel()">Export Excel</button></div>
+    <p class="small" style="margin-bottom:0;">Ultima copie: ${state.setari.ultimBackup ? new Date(state.setari.ultimBackup).toLocaleString('ro-RO') : 'niciodată'}</p>
+    <input type="file" id="fisier-json" accept=".json,application/json" style="display:none;" onchange="restaureazaJSON(this)"></div>
+  <div class="card"><h3>Cum funcționează</h3><ol style="margin:0; padding-left:20px; line-height:1.6;"><li>În <b>Clase</b> adaugi clasa și imporți repartizarea din Excel.</li><li>La fiecare service alegi elevul responsabil.</li><li>În <b>Azi</b> apeși „Trimite linkul pe WhatsApp”. Linkul rămâne același în fiecare zi.</li><li>Responsabilul bifează prezenții și trimite; prezența apare aici imediat.</li></ol></div>`;
+}
+async function backupJSON(){
+  const nume = `practica-backup-${ziAzi()}.json`, text = JSON.stringify(state, null, 1);
+  state.setari.ultimBackup = Date.now(); saveState();
+  try{ const f = new File([text], nume, {type: 'application/json'}); if (navigator.canShare && navigator.canShare({files: [f]}) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){ await navigator.share({files: [f], title: nume}); deseneaza(); return; } }catch(e){ if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type: 'application/json'})); a.download = nume; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); deseneaza();
+}
+function restaureazaJSON(input){
+  const fis = input.files[0]; if (!fis) return;
+  const cit = new FileReader();
+  cit.onload = () => { let nou; try{ nou = JSON.parse(cit.result); if (!nou || !Array.isArray(nou.clase)) throw 0; }catch(e){ return toast('Fișierul nu este o copie de siguranță a aplicației.', 4000); }
+    confirma(`Înlocuiești datele de acum cu cele din copie (${nou.clase.length} clase)? Datele de acum se descarcă întâi ca fișier, ca să nu se piardă.`, async () => { await backupJSON(); state = migreazaDate(nou); listePublicate = {}; saveState(); incarcatPentru = ''; deseneaza(); toast('Datele au fost restaurate.'); }, 'Da, restaurează'); };
+  cit.readAsText(fis); input.value = '';
+}
+
+/* ---------- pornire ---------- */
+const codLink = new URLSearchParams(location.search).get('l');
+if (codLink && /^[a-z0-9]{16,40}$/.test(codLink)) pornesteElev(codLink); else pornesteCoordonator();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => {}));
+</script>
+</body>
+</html>
